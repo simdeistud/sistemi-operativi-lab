@@ -5,8 +5,8 @@
 #include <sys/wait.h>
 
 
-#define MAXPROCESSES 256
-#define MAXQUEUESIZE 256
+#define MAXPROCESSES 16
+#define MAXQUEUESIZE 16
 #define MAXCMD 512
 #define MAXARG 256
 #define MAXARGS 256
@@ -44,13 +44,7 @@ int main(int argc, char** argv)
     }
 
     // creo una coda di comandi per ogni processo e la relativa capienza
-    char*** proc_queues = malloc(MAXPROCESSES * sizeof(char **));
-    for(int i = 0; i < MAXPROCESSES; i++) {
-        proc_queues[i] = malloc(MAXQUEUESIZE * sizeof(char *));
-        for(int j = 0; j < MAXQUEUESIZE; j++) {
-            proc_queues[i][j] = malloc(MAXCMD * sizeof(char));
-        }
-    }
+    char proc_queues[MAXPROCESSES][MAXQUEUESIZE][MAXCMD];
     int proc_queues_size[MAXPROCESSES] = { 0 };
 
     // in base al numero di processi specificato dall'utente riempio le code con i processi distribuiti equamente
