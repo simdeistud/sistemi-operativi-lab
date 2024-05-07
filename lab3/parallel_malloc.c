@@ -14,10 +14,6 @@
 
 int addArgsToCommand(char* command, char* args);
 
-// creo una coda di comandi per ogni processo e la relativa capienza
-char proc_queues[MAXPROCESSES][MAXQUEUESIZE][MAXCMD];
-int proc_queues_size[MAXPROCESSES] = { 0 };
-
 int main(int argc, char** argv)
 {
 
@@ -47,7 +43,15 @@ int main(int argc, char** argv)
         return 1;
     }
 
-
+    // creo una coda di comandi per ogni processo e la relativa capienza
+    char*** proc_queues = malloc(MAXPROCESSES * sizeof(char **));
+    for(int i = 0; i < MAXPROCESSES; i++) {
+        proc_queues[i] = malloc(MAXQUEUESIZE * sizeof(char *));
+        for(int j = 0; j < MAXQUEUESIZE; j++) {
+            proc_queues[i][j] = malloc(MAXCMD * sizeof(char));
+        }
+    }
+    int proc_queues_size[MAXPROCESSES] = { 0 };
 
     // in base al numero di processi specificato dall'utente riempio le code con i processi distribuiti equamente
     char args_line[MAXARG];
@@ -59,6 +63,7 @@ int main(int argc, char** argv)
         strcpy(command, argv[3]);
         if (addArgsToCommand(command, args_line)) {
             printf("Something happened in the args replacement\n");
+            free((void*)proc_queues);
             return 1;
         }
 
@@ -69,12 +74,14 @@ int main(int argc, char** argv)
 
     if(cmd_num < n_conc){
         printf("There are more processes than available commands!\n");
+        free((void*)proc_queues);
         return 1;
     }
 
     // chiudo il file
     if (fclose(f) != 0) {
         perror("Error closing the file");
+        free((void*)proc_queues);
         return 1;
     }
 
@@ -94,8 +101,10 @@ int main(int argc, char** argv)
                 if(!fork()){
                     if (execvp(prog, args) == -1) {
                         perror("There was an error executing the command");
+                        free((void*)proc_queues);
                         return 1;
                     }
+                    free((void*)proc_queues);
                     return 0;
                 } else {wait(NULL);}
 
@@ -104,6 +113,7 @@ int main(int argc, char** argv)
         }
     }
     wait(NULL);
+    free((void*)proc_queues);
     return 0;
 }
 
