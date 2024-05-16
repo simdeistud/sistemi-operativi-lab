@@ -11,6 +11,8 @@
 #define SEMAPHORE_PREFIX "/autonoleggio_"
 #define SEMAPHORE_PREFIX_LEN  14
 
+sem_t * sem_reading;
+
 void create_semaphores();
 void view_cars_status();
 void lock_car(char car_name[]);
@@ -18,8 +20,7 @@ void release_car(char car_name[]);
 
 int main(int argc, char* argv[])
 {
-
-    if(argc != 0){
+    if(argc != 1){
         return 1;
     }
 
@@ -37,6 +38,7 @@ int main(int argc, char* argv[])
                                 */
     sem_wait(sem_starting);
     sem_post(sem_starting);
+    sem_reading = sem_open("/autonoleggio_reading", O_CREAT, S_IRUSR | S_IWUSR, 0);
 
     while(1){
         char input[INPUT_MAX];
@@ -70,6 +72,7 @@ int main(int argc, char* argv[])
 void create_semaphores()
 {
     FILE * catalog;
+    sem_reading = sem_open("/autonoleggio_reading", O_CREAT, S_IRUSR | S_IWUSR, 0);
     catalog = fopen("catalog.txt", "r");
     if(catalog == NULL){
         perror("Impossibile aprire catalog.txt");
@@ -86,10 +89,12 @@ void create_semaphores()
         }
     }
     fclose(catalog);
+    sem_post(sem_reading);
 }
 
 void view_cars_status()
 {
+    sem_wait(sem_reading);
     FILE * catalog;
     catalog = fopen("catalog.txt", "r");
     if(catalog == NULL){
@@ -114,6 +119,7 @@ void view_cars_status()
         printf("\n");
     }
     fclose(catalog);
+    sem_post(sem_reading);
 }
 
 void lock_car(char car_name[])
